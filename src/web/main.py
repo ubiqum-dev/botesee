@@ -17,6 +17,7 @@ from src import conf
 from src.celery.tasks import match_score_update, match_finished
 from src.clients.models.rabbit.queues import QueueName
 from src.clients.rabbit import RabbitClient
+from src.clients.redis_repo import redis_repo
 from src.web.dependencies import get_rabbit
 from src.web.models.base import EventEnum
 from src.web.models.events import WebhookMatch
@@ -50,7 +51,7 @@ async def validation_exception_handler(
 
 
 async def faceit_webhook_auth(
-    token: str = Header(None, alias="Webhook-Authorization")
+    token: str = Header(None, alias="Webhook-Authorization"),
 ) -> str:
     if token != conf.FACEIT_WEBHOOK_AUTH:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Authorization required")
@@ -83,11 +84,21 @@ async def faceit_webhook(
             background_tasks.add_task(
                 rabbit.publish, message=match.json(), routing_key=QueueName.MATCHES
             )
+            background_tasks.add_task(
+                redis_repo.publish,
+                queue=QueueName.MATCHES,
+                message=match,
+            )
         case EventEnum.FINISHED:
             match_finished.delay(match.dict())
         case _:
             background_tasks.add_task(
                 rabbit.publish, message=match.json(), routing_key=QueueName.MATCHES
+            )
+            background_tasks.add_task(
+                redis_repo.publish,
+                queue=QueueName.MATCHES,
+                message=match,
             )
 
     return OKResponse()

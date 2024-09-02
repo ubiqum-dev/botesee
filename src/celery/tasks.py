@@ -9,6 +9,7 @@ from src import conf
 from src.clients.faceit import faceit_client
 from src.clients.models.rabbit.queues import QueueName
 from src.clients.rabbit import RabbitClient
+from src.clients.redis_repo import redis_repo
 from src.db.script import db_match_finished
 from src.utils.shared_models import DetailsMatchDict
 from src.web.dependencies import get_rabbit
@@ -37,6 +38,10 @@ async def _score_update(match_ready: MatchReady) -> None:
                 json.dumps(details_match_dict.model_dump_json()),
                 routing_key=QueueName.UPDATE_SCORE,
             )
+            await redis_repo.publish(
+                QueueName.UPDATE_SCORE,
+                details_match_dict,
+            )
 
 
 @app.task
@@ -52,6 +57,7 @@ async def _match_finished(match: MatchFinished) -> None:
     await db_match_finished(match, statistics)
     rabbit: RabbitClient = await get_rabbit()
     await rabbit.publish(message=match.model_dump_json(), routing_key=QueueName.MATCHES)
+    await redis_repo.publish(QueueName.MATCHES, match)
 
 
 @app.task
