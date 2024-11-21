@@ -2,6 +2,7 @@ import asyncio
 
 from src import conf
 from src.clients.rabbit import RabbitWorker
+from src.clients.redis_repo import redis_repo
 from src.discord_bot.discord_factory import discord_factory
 
 
@@ -17,6 +18,7 @@ async def main():
     )
 
     await asyncio.gather(
+        redis_repo.consume(discord_client),
         rabbit.consume(),
         discord_client.start(conf.DISCORD_TOKEN),
     )

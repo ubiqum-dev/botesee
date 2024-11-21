@@ -98,7 +98,7 @@ class RabbitWorker:
         while not self.discord.faceit_channel:
             sleep_time += 1
             logger.info(
-                f"Waiting for discord bot to startup. Total sleep: {sleep_time} sec."
+                f"Rabbit waiting for discord bot to startup. Total sleep: {sleep_time} sec."
             )
             await asyncio.sleep(1)
 

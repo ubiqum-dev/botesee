@@ -25,4 +25,4 @@ ENTRYPOINT ["./web.sh"]
 
 FROM base as celery
 
-CMD ["celery", "-A", "src.celery.tasks.app", "worker", "-l", "INFO"]
+CMD ["celery", "-A", "src.celery.tasks.app", "worker", "-l", "WARNING"]
